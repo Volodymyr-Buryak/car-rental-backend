@@ -1,11 +1,15 @@
 package com.carhub.carrental.Common.config.properties;
 
-import jakarta.validation.constraints.NotNull;
+import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+@Validated
 @ConfigurationProperties(prefix = "application.rabbitmq.identity")
 public record IdentityRabbitProperties(
-        @NotNull String exchange,
-        @NotNull String queue,
-        @NotNull String routingKey
-) { }
+        @NotBlank String exchange,
+        @NotBlank String queue,
+        @NotEmpty List<@NotBlank String> bindingKeys
+) {}
