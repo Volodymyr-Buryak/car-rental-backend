@@ -1,0 +1,47 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+hs_err_pid*
+replay_pid*
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Build output
+target/
+out/
+
+# Local Maven settings
+.mvn/timing.properties
+
+.env
+
+docker/keycloak/realm-transfer/export/*
+docker/keycloak/realm-transfer/import/*
+
+!docker/keycloak/realm-transfer/export/.gitkeep
+!docker/keycloak/realm-transfer/import/.gitkeep
+/src/main/resources/application.yaml
+/src/main/resources/messages.properties
+/docker-compose.yaml
