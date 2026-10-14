@@ -15,7 +15,7 @@ CREATE TABLE user_module.users
     last_name        VARCHAR(150),
     middle_name      VARCHAR(150),
     phone_number     VARCHAR(16) UNIQUE,
-    avatar_key       VARCHAR(255),
+    avatar_url       VARCHAR(255),
 
     status user_module.user_status NOT NULL DEFAULT 'ACTIVE',
 

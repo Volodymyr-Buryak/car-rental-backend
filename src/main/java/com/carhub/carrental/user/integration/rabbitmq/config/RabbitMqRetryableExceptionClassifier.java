@@ -2,7 +2,6 @@ package com.carhub.carrental.user.integration.rabbitmq.config;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import com.carhub.carrental.user.service.exception.IdentityProviderException;
 
 @RequiredArgsConstructor
 public class RabbitMqRetryableExceptionClassifier {
@@ -13,9 +12,6 @@ public class RabbitMqRetryableExceptionClassifier {
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
             if (isRetryableException(cause)) {
                 return true;
-            }
-            if (cause instanceof IdentityProviderException) {
-                return false;
             }
         }
         return false;

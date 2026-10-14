@@ -1,6 +1,7 @@
 package com.carhub.carrental.user.integration.rabbitmq.config;
 
 import java.util.List;
+import com.carhub.carrental.user.service.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
@@ -9,12 +10,10 @@ import org.springframework.dao.TransientDataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import com.carhub.carrental.user.service.exception.EmailNotVerifiedException;
+import com.carhub.carrental.user.service.exception.IdentityEmailMismatchException;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
-import com.carhub.carrental.user.service.exception.IdentityUserNotFoundException;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
-import com.carhub.carrental.user.service.exception.IdentityProviderUnavailableException;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
 
 @Configuration
@@ -39,11 +38,10 @@ public class KeycloakRabbitMqConfig {
     public RabbitMqRetryableExceptionClassifier keycloakRetryableExceptionClassifier() {
         return new RabbitMqRetryableExceptionClassifier(
                 List.of(
-                        EmailNotVerifiedException.class,
+                        UserNotFoundException.class,
+                        IdentityEmailMismatchException.class,
                         TransientDataAccessException.class,
-                        IdentityUserNotFoundException.class,
-                        DataAccessResourceFailureException.class,
-                        IdentityProviderUnavailableException.class
+                        DataAccessResourceFailureException.class
                 )
         );
     }

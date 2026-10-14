@@ -5,6 +5,9 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import com.carhub.carrental.user.service.exception.ProfileNotFoundException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +27,12 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final String BASE_ERROR_URI = "https://cosmo-cats.market/errors";
+
+    @ExceptionHandler(ProfileNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleProfileNotFound(ProfileNotFoundException ex) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Client profile not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(

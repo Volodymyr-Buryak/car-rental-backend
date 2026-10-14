@@ -25,9 +25,9 @@ public class User {
     private String firstName;
     private String lastName;
     private String middleName;
-    private String avatarKey;
     private String phoneNumber;
-    private Boolean emailVerified;
+    private String avatarUrl;
+    private boolean emailVerified = false;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -45,21 +45,37 @@ public class User {
             String firstName,
             String lastName,
             String middleName,
-            String avatarKey,
             String phoneNumber,
-            Instant createdAt,
-            Instant updatedAt
+            String avatarUrl,
+            Instant createdAt
     ) {
         this.identityId = identityId;
         this.email = email;
-        this.avatarKey = avatarKey;
-        this.lastName = lastName;
         this.firstName = firstName;
+        this.lastName = lastName;
         this.middleName = middleName;
         this.phoneNumber = phoneNumber;
-        this.emailVerified = false;
+        this.avatarUrl = avatarUrl;
         this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.updatedAt = createdAt;
+    }
+
+    @PrePersist
+    private void onCreate() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = createdAt;
+        }
+    }
+
+    public void markEmailVerified() {
+        this.emailVerified = true;
+    }
+
+    public void updateEmail(String email) {
+        this.email = email;
     }
 
     @Override
@@ -76,9 +92,8 @@ public class User {
     }
 
     private static Class<?> getEffectiveClass(Object object) {
-        return object instanceof HibernateProxy proxy
+        return (object instanceof HibernateProxy proxy)
                 ? proxy.getHibernateLazyInitializer().getPersistentClass()
                 : object.getClass();
     }
-
 }

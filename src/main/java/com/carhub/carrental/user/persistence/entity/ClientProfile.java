@@ -12,17 +12,41 @@ import org.hibernate.proxy.HibernateProxy;
 @Table(name = "client_profiles", schema = "user_module")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ClientProfile {
-
     @Id
     @Column(name = "user_id")
     private UUID id;
 
     @MapsId
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "user_id")
     private User user;
-
     private LocalDate birthDate;
+
+    @OneToOne(mappedBy = "client", cascade = CascadeType.PERSIST)
+    private IdentityDocument identityDocument;
+
+    @OneToOne(mappedBy = "client", cascade = CascadeType.PERSIST)
+    private DriverLicense driverLicense;
+
+    @Builder
+    private ClientProfile(User user, LocalDate birthDate) {
+        this.user = user;
+        this.birthDate = birthDate;
+    }
+
+    public void updateBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public void addIdentityDocument(IdentityDocument document) {
+        document.assignTo(this);
+        this.identityDocument = document;
+    }
+
+    public void addDriverLicense(DriverLicense license) {
+        license.assignTo(this);
+        this.driverLicense = license;
+    }
 
     @Override
     public final boolean equals(Object o) {
@@ -42,5 +66,4 @@ public class ClientProfile {
                 ? proxy.getHibernateLazyInitializer().getPersistentClass()
                 : object.getClass();
     }
-
 }

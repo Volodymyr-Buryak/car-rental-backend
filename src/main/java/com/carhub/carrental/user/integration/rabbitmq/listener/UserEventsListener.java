@@ -5,40 +5,46 @@ import lombok.extern.slf4j.Slf4j;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.amqp.support.AmqpHeaders;
 import com.carhub.carrental.user.service.UserService;
+import com.carhub.carrental.user.service.ClientProfileService;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import com.carhub.carrental.user.integration.rabbitmq.event.KeycloakClientEvent;
+import com.carhub.carrental.user.integration.rabbitmq.event.KeycloakUserEvent;
+
+import static org.springframework.amqp.support.AmqpHeaders.DELIVERY_TAG;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ClientEventListener {
+public class UserEventsListener {
 
     private final UserService userService;
+    private final ClientProfileService clientProfileService;
 
     @RabbitListener(
-            queues = "${application.integration.keycloak.rabbitmq.queues.client.name}",
+            errorHandler = "keycloakRabbitMqErrorHandler",
             containerFactory = "keycloakRabbitListenerContainerFactory",
-            errorHandler = "keycloakRabbitMqErrorHandler"
+            queues = "${application.integration.keycloak.rabbitmq.queues.user.name}"
     )
-    public void handleClientEvent(
-            KeycloakClientEvent event, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag
+    public void handleUserEvent(
+            Channel channel,
+            KeycloakUserEvent event,
+            @Header(DELIVERY_TAG) long deliveryTag
     ) throws IOException {
         switch (event.type()) {
             case REGISTER -> {
                 log.info("Handling REGISTER event for userId: {}", event.userId());
-                userService.register(event.userId(), event.details().email(), event.time());
+                clientProfileService.provisionClient(event.userId(), event.details().email(), event.getInstance());
             }
             case VERIFY_EMAIL -> {
                 log.info("Handling VERIFY_EMAIL event for userId: {}", event.userId());
-                userService.verifyEmail(event.userId());
+                userService.verifyEmail(event.userId(), event.details().email());
             }
             default -> {
-                log.warn("Received unknown event type: {}", event.type());
+                log.warn("Received unknown user event type: {}", event.type());
             }
         }
         channel.basicAck(deliveryTag, false);
     }
+
 }

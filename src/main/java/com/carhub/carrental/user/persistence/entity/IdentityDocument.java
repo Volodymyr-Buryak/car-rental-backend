@@ -28,24 +28,25 @@ public class IdentityDocument {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "user_module.identity_document_type")
     private IdentityDocumentType type;
-
     private String series;
     private String number;
     private LocalDate expiresAt;
 
     @Builder
     private IdentityDocument(
-            ClientProfile client,
-            IdentityDocumentType type,
             String series,
             String number,
-            LocalDate expiresAt
+            LocalDate expiresAt,
+            IdentityDocumentType type
     ) {
-        this.client = client;
         this.type = type;
         this.series = series;
         this.number = number;
         this.expiresAt = expiresAt;
+    }
+
+    void assignTo(ClientProfile client) {
+        this.client = client;
     }
 
     @Override
@@ -62,7 +63,7 @@ public class IdentityDocument {
     }
 
     private static Class<?> getEffectiveClass(Object object) {
-        return object instanceof HibernateProxy proxy
+        return (object instanceof HibernateProxy proxy)
                 ? proxy.getHibernateLazyInitializer().getPersistentClass()
                 : object.getClass();
     }

@@ -28,20 +28,22 @@ public class DriverLicense {
     private LocalDate categoryBOpenedAt;
 
     @Builder
-    private DriverLicense (
-            ClientProfile client,
+    private DriverLicense(
             String series,
             String number,
             LocalDate issuedAt,
             LocalDate expiresAt,
             LocalDate categoryBOpenedAt
     ) {
-        this.client = client;
         this.series = series;
         this.number = number;
         this.issuedAt = issuedAt;
         this.expiresAt = expiresAt;
         this.categoryBOpenedAt = categoryBOpenedAt;
+    }
+
+    void assignTo(ClientProfile client) {
+        this.client = client;
     }
 
     @Override
@@ -58,7 +60,7 @@ public class DriverLicense {
     }
 
     private static Class<?> getEffectiveClass(Object object) {
-        return object instanceof HibernateProxy proxy
+        return (object instanceof HibernateProxy proxy)
                 ? proxy.getHibernateLazyInitializer().getPersistentClass()
                 : object.getClass();
     }
