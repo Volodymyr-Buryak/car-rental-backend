@@ -26,23 +26,16 @@ public class UserEventsListener {
             containerFactory = "keycloakRabbitListenerContainerFactory",
             queues = "${application.integration.keycloak.rabbitmq.queues.user.name}"
     )
-    public void handleUserEvent(
-            Channel channel,
-            KeycloakUserEvent event,
-            @Header(DELIVERY_TAG) long deliveryTag
-    ) throws IOException {
+    public void handleUserEvent(Channel channel, KeycloakUserEvent event,
+                                @Header(DELIVERY_TAG) long deliveryTag) throws IOException {
         switch (event.type()) {
             case REGISTER -> {
-                log.info("Handling REGISTER event for userId: {}", event.userId());
                 clientProfileService.provisionClient(event.userId(), event.details().email(), event.getInstance());
             }
             case VERIFY_EMAIL -> {
-                log.info("Handling VERIFY_EMAIL event for userId: {}", event.userId());
                 userService.verifyEmail(event.userId(), event.details().email());
             }
-            default -> {
-                log.warn("Received unknown user event type: {}", event.type());
-            }
+            default -> log.warn("User event ignored: type={}, userId={}", event.type(), event.userId());
         }
         channel.basicAck(deliveryTag, false);
     }

@@ -1,4 +1,4 @@
-package com.carhub.carrental.common.config;
+package com.carhub.carrental.common.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,9 +24,10 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/test").authenticated()
+                        .requestMatchers("/api/v1/clients/me/profile").authenticated()
                         .anyRequest().permitAll()
                 )
-                .oauth2ResourceServer((oauth2) -> oauth2
+                .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
                 )
                 .build();
