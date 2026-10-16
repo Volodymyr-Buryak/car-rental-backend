@@ -32,7 +32,7 @@ CREATE TABLE user_module.users
         CHECK (middle_name IS NULL OR length(btrim(middle_name)) >= 2),
 
     CONSTRAINT chk_users_phone_number
-        CHECK (phone_number IS NULL  OR phone_number ~ '^\+[1-9][0-9]{4,14}$' ),
+        CHECK (phone_number IS NULL OR phone_number ~ '^[+]380[0-9]{9}$'),
 
     CONSTRAINT chk_users_updated_at
         CHECK (updated_at >= created_at)
