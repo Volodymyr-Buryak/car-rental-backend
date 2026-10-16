@@ -1,0 +1,650 @@
+openapi: 3.1.0
+info:
+  title: CarHub User Module API
+  version: 0.0.1-SNAPSHOT
+  description: Contract derived from the current user module Java code, shared exception handlers, SecurityConfig
+    and application.yaml. Only implemented REST operations are included. RabbitMQ listeners and Keycloak administration
+    calls are not REST endpoints of this application. DTO field names are camelCase. Null record components are
+    emitted. Verification status is not implemented. Personal information updates use a validated request DTO.
+servers:
+- url: http://localhost:8081/carhub
+  description: Local defaults from application.yaml; deployment properties may override host, port and context path.
+tags:
+- name: Client profile
+  description: Profile of the authenticated client.
+paths:
+  /api/v1/clients/me/profile:
+    get:
+      tags:
+      - Client profile
+      summary: Get the authenticated client profile
+      description: Loads the local profile using UUID.fromString(jwt.getSubject()). The identity comes exclusively
+        from the authenticated JWT, not a path or query parameter. No request body or controller parameters are
+        declared. Authentication is required; no role or scope check is configured for this operation. The configured
+        issuer, audience and the CustomClaimValidator UUID subject check are used by the Spring Boot 4.1.1 auto-configured
+        JwtDecoder. The full local URL is http://localhost:8081/carhub/api/v1/clients/me/profile. JSON and YAML
+        are supported by the current converters; their date representations differ. Missing documents are null.
+        completion.complete indicates presence of required profile data, not verification or approval.
+      operationId: getClientProfile
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Local client profile found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientProfileResponse'
+              examples:
+                incompleteProfile:
+                  summary: Profile with no personal details or documents
+                  value:
+                    personalInfo:
+                      firstName: null
+                      lastName: null
+                      middleName: null
+                      birthDate: null
+                      phoneNumber: null
+                    account:
+                      email: client@example.com
+                      avatarUrl: null
+                      emailVerified: false
+                    identityDocument: null
+                    driverLicense: null
+                    completion:
+                      complete: false
+                      missingSections:
+                      - PERSONAL_INFO
+                      - IDENTITY_DOCUMENT
+                      - DRIVER_LICENSE
+                completeProfile:
+                  summary: All completion sections present; verification statuses remain unimplemented
+                  value:
+                    personalInfo:
+                      firstName: Olena
+                      lastName: Koval
+                      middleName: Ivanivna
+                      birthDate: '1995-05-20'
+                      phoneNumber: '+380501234567'
+                    account:
+                      email: client@example.com
+                      avatarUrl: null
+                      emailVerified: false
+                    identityDocument:
+                      type: ID_CARD
+                      maskedNumber: '6789'
+                      verificationStatus: null
+                    driverLicense:
+                      maskedNumber: '3456'
+                      categoryBOpenedAt: '2015-06-01'
+                      verificationStatus: null
+                    completion:
+                      complete: true
+                      missingSections: []
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ClientProfileYamlResponse'
+        '401':
+          description: Authentication is absent, or the bearer token is malformed or invalid. Handled by Spring
+            Security before MVC. The current entry point returns an empty body, not ApiProblem.
+          headers:
+            WWW-Authenticate:
+              description: Bearer challenge. Optional error attributes and resource_metadata depend on the failure
+                and request URL.
+              schema:
+                type: string
+        '404':
+          description: 'ClientProfileNotFoundException: no local client profile for the authenticated identity.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+              examples:
+                profileNotFound:
+                  value:
+                    type: https://api.carhub.com/errors/not-found
+                    title: Not Found
+                    status: 404
+                    detail: Client profile was not found.
+                    instance: /carhub/api/v1/clients/me/profile
+        '406':
+          description: The requested Accept representation is unsupported; handled by the inherited Spring MVC exception
+            handler.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MvcProblemDetail'
+              examples:
+                unsupportedAccept:
+                  value:
+                    detail: No acceptable response representation is available.
+                    instance: /carhub/api/v1/clients/me/profile
+                    status: 406
+                    title: Not acceptable
+        '500':
+          description: Unexpected exception handled by GlobalExceptionHandler. Internal exception details are logged,
+            not returned.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+              examples:
+                unexpectedFailure:
+                  value:
+                    type: https://api.carhub.com/errors/internal-server-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred.
+                    instance: /carhub/api/v1/clients/me/profile
+      x-code-sources:
+      - src/main/java/com/carhub/carrental/user/web/controller/ClientProfileController.java
+      - src/main/java/com/carhub/carrental/user/service/impl/ClientProfileServiceImpl.java
+      - src/main/java/com/carhub/carrental/user/persistence/mapper/ClientProfileMapper.java
+      - src/main/java/com/carhub/carrental/common/security/SecurityConfig.java
+      - src/main/java/com/carhub/carrental/common/web/error/handler/GlobalExceptionHandler.java
+      - src/main/java/com/carhub/carrental/common/web/error/handler/CustomResponseEntityExceptionHandler.java
+  /api/v1/clients/me/personal-info:
+    put:
+      tags:
+      - Client profile
+      summary: Fill or edit the authenticated client's personal information
+      description: Updates firstName, lastName, middleName and phoneNumber on the existing User and birthDate on
+        the existing ClientProfile in one transaction. The identity is taken exclusively from the authenticated
+        JWT subject; no clientId is accepted. Names are stripped of leading and trailing whitespace before storage.
+        All request fields, including middleName, are required and cannot be null; names must not be blank on each
+        call. A missing profile is not created. No role or scope check is configured. Database constraint failures,
+        including a phone number already used by another user, currently reach the generic 500 handler.
+      operationId: updatePersonalInfo
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePersonalInfoRequest'
+            examples:
+              personalInfo:
+                value:
+                  firstName: Olena
+                  lastName: Koval
+                  middleName: Ivanivna
+                  birthDate: '1995-05-20'
+                  phoneNumber: '+380501234567'
+      responses:
+        '204':
+          description: Personal information updated successfully. No response body.
+        '400':
+          description: Bean Validation failure returns ApiProblem with field errors. A missing request body,
+            malformed JSON or an unreadable date returns the inherited Spring MVC ProblemDetail instead.
+            Error messages currently use the English messages.properties bundle. Field errors are resolved by
+            constraint, request object and field name; multiple errors may be returned for one field and their order is not guaranteed.
+          content:
+            application/problem+json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiProblem'
+                - $ref: '#/components/schemas/MvcProblemDetail'
+              examples:
+                missingBirthDate:
+                  summary: Required birthDate is missing or null (English locale)
+                  value:
+                    type: https://api.carhub.com/errors/validation-error
+                    title: Validation error
+                    status: 400
+                    detail: Validation failed for one or more fields. Please check your request parameters.
+                    instance: /carhub/api/v1/clients/me/personal-info
+                    errors:
+                    - detail: Date of birth is required.
+                      pointer: /birthDate
+                invalidPersonalInfo:
+                  summary: Short first name, non-past birth date and invalid phone number
+                  value:
+                    type: https://api.carhub.com/errors/validation-error
+                    title: Validation error
+                    status: 400
+                    detail: Validation failed for one or more fields. Please check your request parameters.
+                    instance: /carhub/api/v1/clients/me/personal-info
+                    errors:
+                    - detail: First name must contain between 2 and 150 characters after trimming leading and trailing whitespace.
+                      pointer: /firstName
+                    - detail: Date of birth must be in the past.
+                      pointer: /birthDate
+                    - detail: Phone number must start with +380 followed by exactly 9 digits (for example, +380501234567).
+                      pointer: /phoneNumber
+                unreadableBody:
+                  summary: Missing body, malformed JSON or unreadable date
+                  value:
+                    type: about:blank
+                    title: Invalid request body
+                    status: 400
+                    detail: Request body is missing or malformed.
+                    instance: /carhub/api/v1/clients/me/personal-info
+        '401':
+          description: Missing or invalid bearer token. Spring Security returns an empty response body.
+          headers:
+            WWW-Authenticate:
+              description: Bearer authentication challenge.
+              schema:
+                type: string
+        '404':
+          description: No local client profile for the authenticated identity.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+              examples:
+                profileNotFound:
+                  value:
+                    type: https://api.carhub.com/errors/not-found
+                    title: Not Found
+                    status: 404
+                    detail: Client profile was not found.
+                    instance: /carhub/api/v1/clients/me/personal-info
+        '415':
+          description: No configured converter can read the supplied request Content-Type.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/MvcProblemDetail'
+              examples:
+                unsupportedContentType:
+                  value:
+                    title: Unsupported media type
+                    status: 415
+                    detail: Request media type is not supported.
+                    instance: /carhub/api/v1/clients/me/personal-info
+        '500':
+          description: Unexpected exception or database constraint failure handled by GlobalExceptionHandler.
+            The transaction is rolled back. No dedicated phone-conflict response is implemented.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+              examples:
+                unexpectedFailure:
+                  value:
+                    type: https://api.carhub.com/errors/internal-server-error
+                    title: Internal Server Error
+                    status: 500
+                    detail: An unexpected error occurred.
+                    instance: /carhub/api/v1/clients/me/personal-info
+      x-code-sources:
+      - src/main/java/com/carhub/carrental/user/web/controller/ClientProfileController.java
+      - src/main/java/com/carhub/carrental/user/web/dto/client/profile/section/UpdatePersonalInfoRequest.java
+      - src/main/java/com/carhub/carrental/user/web/validation/ValidPersonName.java
+      - src/main/java/com/carhub/carrental/user/web/validation/PersonNameValidator.java
+      - src/main/resources/messages.properties
+      - src/main/java/com/carhub/carrental/user/service/impl/ClientProfileServiceImpl.java
+      - src/main/java/com/carhub/carrental/common/web/error/handler/CustomResponseEntityExceptionHandler.java
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Authorization: Bearer <access-token>. Stateless OAuth2 resource server. Local issuer: http://localhost:9090/realms/autorent;
+        configured audience: autorent-api. The sub claim must be accepted by UUID.fromString. No client OAuth2 grant
+        flow is defined by this API.'
+  schemas:
+    UpdatePersonalInfoRequest:
+      type: object
+      description: Validated request for initial entry and subsequent replacement of personal information.
+        Unrecognized properties follow the configured Jackson defaults; no extra fields are used by the service.
+      required:
+      - firstName
+      - lastName
+      - middleName
+      - birthDate
+      - phoneNumber
+      properties:
+        firstName:
+          type: string
+          description: Required and not blank. ValidPersonName applies String.strip() and then requires Java
+            String.length() of 2 through 150 UTF-16 code units. The stripped name is stored. These constraints
+            cannot be expressed exactly using JSON Schema minLength/maxLength, which count Unicode code points.
+        lastName:
+          type: string
+          description: Required and not blank. After Java String.strip(), the length must be 2 through 150
+            UTF-16 code units. The stripped name is stored.
+        middleName:
+          type: string
+          description: Required and not blank. Must have 2 through 150 UTF-16 code units after Java String.strip();
+            the stripped value is stored. Omission, null and empty strings are invalid.
+        birthDate:
+          type: string
+          format: date
+          description: Required. Must be strictly before the current date according to the Bean Validation clock
+            and its time zone (Past); today and future dates are invalid. No minimum age is configured.
+        phoneNumber:
+          type: string
+          pattern: '^[+]380[0-9]{9}$'
+          description: Required Ukrainian phone number with +380 followed by exactly 9 ASCII digits.
+            Stored without normalization. A UNIQUE constraint exists in the database.
+    ClientProfileResponse:
+      type: object
+      description: ClientProfileResponse record as serialized by the current JSON converter. Absent documents are
+        explicit null values.
+      required:
+      - personalInfo
+      - account
+      - identityDocument
+      - driverLicense
+      - completion
+      properties:
+        personalInfo:
+          $ref: '#/components/schemas/PersonalInfoResponse'
+        account:
+          $ref: '#/components/schemas/AccountResponse'
+        identityDocument:
+          anyOf:
+          - $ref: '#/components/schemas/IdentityDocumentResponse'
+          - type: 'null'
+        driverLicense:
+          anyOf:
+          - $ref: '#/components/schemas/DriverLicenseResponse'
+          - type: 'null'
+        completion:
+          $ref: '#/components/schemas/ProfileCompletionResponse'
+    PersonalInfoResponse:
+      type: object
+      description: PersonalInfoResponse record. No Bean Validation constraints are declared on its fields.
+      required:
+      - firstName
+      - lastName
+      - middleName
+      - birthDate
+      - phoneNumber
+      properties:
+        firstName:
+          type:
+          - string
+          - 'null'
+        lastName:
+          type:
+          - string
+          - 'null'
+        middleName:
+          type:
+          - string
+          - 'null'
+        birthDate:
+          type:
+          - string
+          - 'null'
+          format: date
+        phoneNumber:
+          type:
+          - string
+          - 'null'
+    AccountResponse:
+      type: object
+      description: AccountResponse record. A missing avatar is serialized as null.
+      required:
+      - email
+      - avatarUrl
+      - emailVerified
+      properties:
+        email:
+          type:
+          - string
+          - 'null'
+          description: Stored email. No DTO-level email format constraint is declared.
+        avatarUrl:
+          type:
+          - string
+          - 'null'
+          description: Stored avatar URL. No DTO-level URI constraint is declared.
+        emailVerified:
+          type: boolean
+    IdentityDocumentResponse:
+      type: object
+      description: IdentityDocumentResponse record. The entire section is null if no identity document exists.
+      required:
+      - type
+      - maskedNumber
+      - verificationStatus
+      properties:
+        type:
+          anyOf:
+          - $ref: '#/components/schemas/IdentityDocumentType'
+          - type: 'null'
+        maskedNumber:
+          type:
+          - string
+          - 'null'
+          description: Last four Java string characters of the stored number; null when the source is null or shorter
+            than four characters.
+        verificationStatus:
+          type: 'null'
+          description: Not implemented. The current mapper always supplies null; no verification status values are
+            defined.
+    DriverLicenseResponse:
+      type: object
+      description: DriverLicenseResponse record. The entire section is null if no driver license exists.
+      required:
+      - maskedNumber
+      - categoryBOpenedAt
+      - verificationStatus
+      properties:
+        maskedNumber:
+          type:
+          - string
+          - 'null'
+          description: Last four Java string characters of the stored number; null when the source is null or shorter
+            than four characters.
+        categoryBOpenedAt:
+          type:
+          - string
+          - 'null'
+          format: date
+        verificationStatus:
+          type: 'null'
+          description: Not implemented. The current mapper always supplies null; no verification status values are
+            defined.
+    ProfileCompletionResponse:
+      type: object
+      description: ProfileCompletionResponse record, populated by ProfileCompletionEvaluator. Order of missingSections
+        is not guaranteed.
+      required:
+      - complete
+      - missingSections
+      properties:
+        complete:
+          type: boolean
+          description: True exactly when missingSections is empty. Document verification and email verification
+            do not participate in this calculation.
+        missingSections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ProfileSection'
+          description: Unordered set. PERSONAL_INFO is missing when firstName, lastName, middleName or phoneNumber is blank,
+            or birthDate is null. Document sections are missing when their corresponding entity is absent.
+    IdentityDocumentType:
+      type: string
+      enum:
+      - ID_CARD
+      - BOOKLET
+    ProfileSection:
+      type: string
+      enum:
+      - PERSONAL_INFO
+      - DRIVER_LICENSE
+      - IDENTITY_DOCUMENT
+    ApiError:
+      type: object
+      description: Shared validation error record used for invalid personal information requests.
+      examples:
+      - detail: Date of birth is required.
+        pointer: /birthDate
+      required:
+      - detail
+      properties:
+        detail:
+          type: string
+        pointer:
+          type: string
+          description: Field pointer; omitted for object-level errors.
+    ApiProblem:
+      type: object
+      description: Shared ApiProblem extends Spring ProblemDetail. Null properties and an empty errors list are
+        omitted. Extension properties may appear at the top level.
+      examples:
+      - type: https://api.carhub.com/errors/validation-error
+        title: Validation error
+        status: 400
+        detail: Validation failed for one or more fields. Please check your request parameters.
+        instance: /carhub/api/v1/clients/me/personal-info
+        errors:
+        - detail: Date of birth is required.
+          pointer: /birthDate
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ApiError'
+    MvcProblemDetail:
+      type: object
+      description: Spring MVC ProblemDetail. The default about:blank type can be omitted by the current converter.
+        Additional RFC 9457 extension properties are allowed.
+      required:
+      - status
+      - title
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+    NullableYamlDate:
+      type:
+      - array
+      - 'null'
+      description: Current YAML converter serializes LocalDate as [year, month, day]; this differs from JSON.
+      minItems: 3
+      maxItems: 3
+      prefixItems:
+      - type: integer
+      - type: integer
+        minimum: 1
+        maximum: 12
+      - type: integer
+        minimum: 1
+        maximum: 31
+      items: false
+    PersonalInfoYamlResponse:
+      type: object
+      description: YAML representation of PersonalInfoResponse; dates are arrays.
+      required:
+      - firstName
+      - lastName
+      - middleName
+      - birthDate
+      - phoneNumber
+      properties:
+        firstName:
+          type:
+          - string
+          - 'null'
+        lastName:
+          type:
+          - string
+          - 'null'
+        middleName:
+          type:
+          - string
+          - 'null'
+        birthDate:
+          $ref: '#/components/schemas/NullableYamlDate'
+        phoneNumber:
+          type:
+          - string
+          - 'null'
+    DriverLicenseYamlResponse:
+      type: object
+      description: YAML representation of DriverLicenseResponse; dates are arrays.
+      required:
+      - maskedNumber
+      - categoryBOpenedAt
+      - verificationStatus
+      properties:
+        maskedNumber:
+          type:
+          - string
+          - 'null'
+          description: Last four Java string characters of the stored number; null when the source is null or shorter
+            than four characters.
+        categoryBOpenedAt:
+          $ref: '#/components/schemas/NullableYamlDate'
+        verificationStatus:
+          type: 'null'
+          description: Not implemented. The current mapper always supplies null; no verification status values are
+            defined.
+    ClientProfileYamlResponse:
+      type: object
+      description: YAML representation of ClientProfileResponse under the current converter defaults.
+      required:
+      - personalInfo
+      - account
+      - identityDocument
+      - driverLicense
+      - completion
+      properties:
+        personalInfo:
+          $ref: '#/components/schemas/PersonalInfoYamlResponse'
+        account:
+          $ref: '#/components/schemas/AccountResponse'
+        identityDocument:
+          anyOf:
+          - $ref: '#/components/schemas/IdentityDocumentResponse'
+          - type: 'null'
+        driverLicense:
+          anyOf:
+          - $ref: '#/components/schemas/DriverLicenseYamlResponse'
+          - type: 'null'
+        completion:
+          $ref: '#/components/schemas/ProfileCompletionResponse'
+x-contract-notes:
+- Neither operation has query, path or custom header parameters. GET has no request body; PUT requires a validated
+  personal information request. Authorization is represented by the security scheme.
+- HEAD is implicitly supported for the GET mapping; it is not a separately declared business operation. OPTIONS
+  and framework/security-generated routes are outside this user module contract.
+- GET has no validated request parameters. PUT documents 400 for validation and body parsing. Neither operation
+  requires roles or scopes, and CSRF protection is disabled.
+- Response strings have no DTO Bean Validation constraints. Request constraints follow UpdatePersonalInfoRequest
+  and ValidPersonName. Java strip/UTF-16 length validation and the relative Past date rule are described in prose.
+- Error type URIs use https://api.carhub.com/errors/ as configured in ApiProblemFactory and CustomClaimValidator;
+  availability of documentation at these URLs has not been established.
+- The current server, JWT issuer/audience and text examples reflect local configuration. External property overrides,
+  alternate locales and reverse proxies can change deployment URLs or error messages.
+- GET runtime examples were captured with real MVC controllers, advice, security filters, MapStruct mapper and completion
+  evaluator, using a mocked service/decoder. Live database and Keycloak integration were not exercised.
+- PUT request examples and responses are derived from the current controller, DTO, validators, service and advice;
+  no PUT runtime capture is claimed. Only the JSON request representation is documented here.
