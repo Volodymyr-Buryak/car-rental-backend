@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record KeycloakUserEvent(
-        long timestamp,
+        long time,
         @NonNull KeycloakUserEventType type,
         @NonNull UUID userId,
         Details details
@@ -25,6 +25,6 @@ public record KeycloakUserEvent(
     ) {}
 
     public Instant getInstance() {
-        return Instant.ofEpochMilli(timestamp);
+        return Instant.ofEpochMilli(time);
     }
 }

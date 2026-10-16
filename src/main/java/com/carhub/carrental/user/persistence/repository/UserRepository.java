@@ -26,7 +26,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("createdAt") Instant createdAt
     );
 
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Modifying
     @Transactional
     @Query("""
             update User u

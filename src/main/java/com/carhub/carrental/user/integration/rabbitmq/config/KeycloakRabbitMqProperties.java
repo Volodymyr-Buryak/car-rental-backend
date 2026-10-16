@@ -13,7 +13,7 @@ public record KeycloakRabbitMqProperties(
 ) {
     public record Queues(
             QueueSettings admin,
-            QueueSettings client,
+            QueueSettings user,
             QueueSettings error
     ) {}
 

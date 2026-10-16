@@ -1,7 +1,7 @@
 package com.carhub.carrental.user.integration.rabbitmq.config;
 
 import java.util.List;
-import com.carhub.carrental.user.service.exception.UserNotFoundException;
+import com.carhub.carrental.user.service.exception.user.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
@@ -10,7 +10,7 @@ import org.springframework.dao.TransientDataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import com.carhub.carrental.user.service.exception.IdentityEmailMismatchException;
+import com.carhub.carrental.user.service.exception.user.IdentityEmailMismatchException;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -69,8 +69,8 @@ public class KeycloakRabbitMqConfig {
     }
 
     @Bean
-    public Queue keycloakClientEventsQueue() {
-        return reliableQuorumQueue(properties.queues().client().name())
+    public Queue keycloakUserEventsQueue() {
+        return reliableQuorumQueue(properties.queues().user().name())
                 .deadLetterExchange(properties.errorExchange())
                 .build();
     }
@@ -93,11 +93,11 @@ public class KeycloakRabbitMqConfig {
     }
 
     @Bean
-    public Declarables keycloakClientBindings() {
+    public Declarables keycloakUserBindings() {
         return createBindings(
-                keycloakClientEventsQueue(),
+                keycloakUserEventsQueue(),
                 keycloakIdentityExchange(),
-                properties.queues().client().bindingKeys()
+                properties.queues().user().bindingKeys()
         );
     }
 

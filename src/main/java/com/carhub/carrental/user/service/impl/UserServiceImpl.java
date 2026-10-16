@@ -6,8 +6,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import com.carhub.carrental.user.service.UserService;
 import com.carhub.carrental.user.persistence.repository.UserRepository;
-import com.carhub.carrental.user.service.exception.UserNotFoundException;
-import com.carhub.carrental.user.service.exception.IdentityEmailMismatchException;
+import com.carhub.carrental.user.service.exception.user.UserNotFoundException;
+import com.carhub.carrental.user.service.exception.user.IdentityEmailMismatchException;
 
 @Service
 @RequiredArgsConstructor

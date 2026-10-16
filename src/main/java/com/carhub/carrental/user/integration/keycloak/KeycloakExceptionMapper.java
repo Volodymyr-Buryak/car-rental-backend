@@ -11,8 +11,8 @@ import java.net.http.HttpTimeoutException;
 import jakarta.ws.rs.WebApplicationException;
 import java.security.cert.CertificateException;
 import org.springframework.stereotype.Component;
-import com.carhub.carrental.user.service.exception.IdentityProviderException;
-import com.carhub.carrental.user.service.exception.IdentityProviderUnavailableException;
+import com.carhub.carrental.user.integration.keycloak.exception.IdentityProviderException;
+import com.carhub.carrental.user.integration.keycloak.exception.IdentityProviderUnavailableException;
 
 @Component
 public class KeycloakExceptionMapper {
