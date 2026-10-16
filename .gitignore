@@ -43,5 +43,4 @@ docker/keycloak/realm-transfer/import/*
 !docker/keycloak/realm-transfer/export/.gitkeep
 !docker/keycloak/realm-transfer/import/.gitkeep
 /src/main/resources/application.yaml
-/src/main/resources/messages.properties
 /docker-compose.yaml

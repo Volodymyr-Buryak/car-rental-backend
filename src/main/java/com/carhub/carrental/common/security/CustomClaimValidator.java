@@ -12,7 +12,7 @@ public class CustomClaimValidator implements OAuth2TokenValidator<Jwt> {
     private static final OAuth2Error INVALID_SUBJECT = new OAuth2Error(
             "invalid_token",
             "Invalid JWT subject",
-            "https://cosmo-cats.market/errors/invalid-subject"
+            "https://api.carhub.com/errors/invalid-subject"
     );
 
     @Override
