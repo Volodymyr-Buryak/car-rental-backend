@@ -17,24 +17,21 @@ public class ClientProfile {
     private UUID id;
 
     @MapsId
-    @OneToOne(optional = false, cascade = CascadeType.PERSIST)
+    @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "user_id")
     private User user;
+    @Setter
     private LocalDate birthDate;
 
-    @OneToOne(mappedBy = "client", cascade = CascadeType.PERSIST)
+    @OneToOne(mappedBy = "client", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private IdentityDocument identityDocument;
 
-    @OneToOne(mappedBy = "client", cascade = CascadeType.PERSIST)
+    @OneToOne(mappedBy = "client", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private DriverLicense driverLicense;
 
     @Builder
     private ClientProfile(User user, LocalDate birthDate) {
         this.user = user;
-        this.birthDate = birthDate;
-    }
-
-    public void updateBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
     }
 

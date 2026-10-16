@@ -1,4 +1,4 @@
-package com.carhub.carrental.user.web.dto.client;
+package com.carhub.carrental.user.web.dto.client.profile.section;
 
 import java.time.LocalDate;
 

@@ -11,23 +11,28 @@ import org.hibernate.annotations.JdbcTypeCode;
 import com.carhub.carrental.user.persistence.entity.enums.UserStatus;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "users", schema = "user_module")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class User {
     @Id
+    @Setter(AccessLevel.PRIVATE)
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "identity_out_ref", updatable = false)
     private UUID identityId;
+
     private String email;
+    private String avatarUrl;
+    private boolean emailVerified = false;
+
     private String firstName;
     private String lastName;
     private String middleName;
     private String phoneNumber;
-    private String avatarUrl;
-    private boolean emailVerified = false;
+
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -37,28 +42,6 @@ public class User {
     @Column(updatable = false)
     private Instant createdAt;
     private Instant updatedAt;
-
-    @Builder
-    private User(
-            UUID identityId,
-            String email,
-            String firstName,
-            String lastName,
-            String middleName,
-            String phoneNumber,
-            String avatarUrl,
-            Instant createdAt
-    ) {
-        this.identityId = identityId;
-        this.email = email;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.middleName = middleName;
-        this.phoneNumber = phoneNumber;
-        this.avatarUrl = avatarUrl;
-        this.createdAt = createdAt;
-        this.updatedAt = createdAt;
-    }
 
     @PrePersist
     private void onCreate() {
@@ -70,12 +53,9 @@ public class User {
         }
     }
 
-    public void markEmailVerified() {
-        this.emailVerified = true;
-    }
-
-    public void updateEmail(String email) {
-        this.email = email;
+    @PreUpdate
+    private void onUpdate() {
+        updatedAt = Instant.now();
     }
 
     @Override

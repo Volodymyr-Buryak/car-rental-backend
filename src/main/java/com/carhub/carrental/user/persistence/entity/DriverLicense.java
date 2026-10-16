@@ -25,6 +25,8 @@ public class DriverLicense {
     private String number;
     private LocalDate issuedAt;
     private LocalDate expiresAt;
+
+    @Column(name = "category_b_opened_at")
     private LocalDate categoryBOpenedAt;
 
     @Builder

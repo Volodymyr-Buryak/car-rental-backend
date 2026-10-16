@@ -23,8 +23,10 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/test").authenticated()
-                        .requestMatchers("/api/v1/clients/me/profile").authenticated()
+                        .requestMatchers(
+                                "/api/v1/clients/me/profile/**",
+                                "/api/v1/clients/me/personal-info"
+                        ).authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
