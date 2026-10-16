@@ -44,3 +44,4 @@ docker/keycloak/realm-transfer/import/*
 !docker/keycloak/realm-transfer/import/.gitkeep
 /src/main/resources/application.yaml
 /docker-compose.yaml
+/docs/
